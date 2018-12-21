@@ -1,0 +1,8 @@
+unit Click_NO2_config;
+
+uses Click_NO2_types;
+
+const
+    _NO2_I2C_CFG : array[1] of uint32_t = (_I2C_100KHZ); 
+    
+end.

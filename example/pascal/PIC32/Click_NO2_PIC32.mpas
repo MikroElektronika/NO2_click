@@ -1,0 +1,79 @@
+{*
+Example for NO2 Click
+
+    Date          : jul 2018.
+    Author        : Katarina Perendic
+
+Test configuration PIC32 :
+    
+    MCU                : P32MX795F512L
+    Dev. Board         : EasyPIC Fusion v7
+    PIC32 Compiler ver : v4.0.0.0
+
+---
+
+Description :
+
+The application is composed of three sections :
+
+- System Initialization - Initializes I2C bus and set AN pin as INPUT and RST pin as OUTPUT.
+- Application Initialization - Initializes I2C driver and device configuration.
+- Application Task - (code snippet) - Gets NO2 (Nitrogen dioxide) data as ppm value and logs to USBUART every 500ms.
+
+*}
+program Click_NO2_PIC32;
+
+uses Click_NO2_types, Click_NO2_config;
+
+var
+    NO2_Value : real; 
+    demoText : array[50] of char; 
+    
+procedure systemInit(); 
+begin
+
+    mikrobus_gpioInit(_MIKROBUS1, _MIKROBUS_AN_PIN, _GPIO_INPUT); 
+    mikrobus_gpioInit(_MIKROBUS1, _MIKROBUS_RST_PIN, _GPIO_OUTPUT); 
+    mikrobus_i2cInit(_MIKROBUS1, @_NO2_I2C_CFG[0]); 
+    mikrobus_logInit(_LOG_USBUART_A, 115200); 
+    mikrobus_logWrite('--- System init ---', _LOG_LINE); 
+    Delay_ms(100); 
+
+end;
+
+procedure applicationInit(); 
+begin
+
+    no2_i2cDriverInit(T_NO2_P(@_MIKROBUS1_GPIO), T_NO2_P(@_MIKROBUS1_I2C), 0x48); 
+    Delay_ms(200); 
+    no2_writeByte(_NO2_MODECN_REG, _NO2_DEEP_SLEEP_MODE); 
+    no2_writeByte(_NO2_LOCK_REG, _NO2_WRITE_MODE); 
+    no2_writeByte(_NO2_TIACN_REG, (_NO2_EXT_TIA_RES or _NO2_100_OHM_LOAD_RES)); 
+    no2_writeByte(_NO2_REFCN_REG, (((_NO2_VREF_INT or _NO2_50_PERCENTS_INT_ZERO) or _NO2_BIAS_POL_NEGATIVE) or _NO2_0_PERCENTS_BIAS)); 
+    mikrobus_logWrite('NO2 is initialized', _LOG_LINE); 
+    Delay_ms(300); 
+
+end;
+
+procedure applicationTask(); 
+begin
+
+    NO2_Value := no2_getNO2ppm(); 
+    FloatToStr(NO2_Value, demoText); 
+    mikrobus_logWrite('NO2 value : ', _LOG_TEXT); 
+    mikrobus_logWrite(demoText, _LOG_TEXT); 
+    mikrobus_logWrite(' ppm', _LOG_LINE); 
+    Delay_ms(500); 
+
+end;
+
+begin
+
+    systemInit(); 
+    applicationInit(); 
+    while (1) do 
+    begin 
+        applicationTask(); 
+    end;
+
+end.

@@ -1,0 +1,8 @@
+module Click_NO2_config
+
+include Click_NO2_types
+
+const
+    _NO2_I2C_CFG as uint32_t[1] = (_I2C_BITRATE_STANDARD_MODE)
+    
+end.
